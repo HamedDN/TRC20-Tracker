@@ -1,102 +1,78 @@
-let body = $(document.body);
-let main = $('#main', body).css({
-    'display': 'flex',
-    'flex-direction': 'column',
-    'align-items': 'center',
-    'justify-content': 'center',
-    'padding': '1rem',
-    'width': '100%',
-});
+let body = document.body;
+let main = document.getElementById('main');
+main.style.display = 'flex';
+main.style.flexDirection = 'column';
+main.style.alignItems = 'center';
+main.style.justifyContent = 'center';
+main.style.padding = '1rem';
+main.style.width = '100%';
 
-let WalletAdress = prompt('Wallet Address: ');
-let url = `https://api.trongrid.io/v1/accounts/${WalletAdress}/transactions/trc20?`;
+let walletAddress = prompt('Wallet Address: ');
+let url = `https://api.trongrid.io/v1/accounts/${walletAddress}/transactions/trc20?`;
 
-main.before(
-    $(`<h4><small>Wallet Address :</small> ${WalletAdress}</h4>`)
-        .css({
-            'margin': '20px',
-        }),
-    $('<p id="load">Loading...</p>')
-        .css({
-            'font-size': '1.5rem',
-            'margin': '20px',
+let heading = document.createElement('h4');
+heading.innerHTML = `<small>Wallet Address :</small> ${walletAddress}`;
+heading.style.margin = '20px';
+main.before(heading);
 
-        })
-);
+let loadingMessage = document.createElement('p');
+loadingMessage.id = 'load';
+loadingMessage.innerHTML = 'Loading...';
+loadingMessage.style.fontSize = '1.5rem';
+loadingMessage.style.margin = '20px';
+body.insertBefore(loadingMessage, main);
 
 fetch(url)
     .then(res => res.json())
-    .then(res =>
-    {
-        $('#load', body).remove();
-        main.append(
-            $('<Table>')
-                .append(
-                    $('<thead>')
-                        .append(
-                            $('<tr>').css('background-color', '#f2f2f2')
-                                .append(
-                                    _ =>
-                                    {
-                                        let headers = [];
-                                        for(let titles in res.data[0])
-                                        {
-                                            if(titles === 'token_info')
-                                                continue;
-                                            headers.push(
-                                                $('<th>').text(titles)
-                                            );
-                                        }
-                                        return headers;
-                                    }
-                                )
-                        ),
-                    $('<tbody>')
-                        .append(
-                            _ =>
-                            {
-                                let Rows = [];
-                                for(let detailes in res.data)
-                                {
-                                    Rows.push(
-                                        $(`<tr>`)
-                                            .hover(
-                                                function()
-                                                {
-                                                    $(this).css('background-color', '#f5f5f5');
-                                                },
-                                                function()
-                                                {
-                                                    $(this).css('background-color', '#fff');
-                                                })
-                                            .append(
-                                                _ =>
-                                                {
-                                                    let detail = [];
-                                                    for(let i in res.data[detailes])
-                                                    {
-                                                        if(i === 'token_info')
-                                                            continue;
-                                                        if(i === 'value')
-                                                            res.data[detailes][i] = res.data[detailes][i] / 1000000;
-                                                        if(i === 'type')
-                                                            if(res.data[detailes].from === WalletAdress)
-                                                                res.data[detailes][i] = 'send';
-                                                            else
-                                                                res.data[detailes][i] = 'receive';
-                                                        detail.push(
-                                                            $('<td>')
-                                                                .text(res.data[detailes][i])
-                                                        );
-                                                    }
-                                                    return detail;
-                                                }
-                                            )
-                                    );
-                                }
-                                return Rows;
-                            }
-                        )
-                )
-        );
+    .then(res => {
+        loadingMessage.remove();
+
+        let table = document.createElement('table');
+        let thead = document.createElement('thead');
+        let tbody = document.createElement('tbody');
+
+        let headersRow = document.createElement('tr');
+        headersRow.style.backgroundColor = '#f2f2f2';
+
+        for (let titles in res.data[0]) {
+            if (titles === 'token_info') continue;
+            let th = document.createElement('th');
+            th.textContent = titles;
+            headersRow.appendChild(th);
+        }
+
+        thead.appendChild(headersRow);
+
+        let rows = [];
+
+        for (let details in res.data) {
+            let row = document.createElement('tr');
+            row.addEventListener('mouseover', function () {
+                this.style.backgroundColor = '#f5f5f5';
+            });
+            row.addEventListener('mouseout', function () {
+                this.style.backgroundColor = '#fff';
+            });
+
+            for (let i in res.data[details]) {
+                if (i === 'token_info') continue;
+
+                let td = document.createElement('td');
+                if (i === 'value') {
+                    res.data[details][i] = res.data[details][i] / 1000000;
+                }
+                if (i === 'type') {
+                    res.data[details][i] = res.data[details].from === walletAddress ? 'send' : 'receive';
+                }
+                td.textContent = res.data[details][i];
+                row.appendChild(td);
+            }
+
+            rows.push(row);
+        }
+
+        tbody.append(...rows);
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        main.appendChild(table);
     });
